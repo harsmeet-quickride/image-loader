@@ -4,11 +4,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
 
 import com.example.imageloader.ImageLoader;
 import com.example.imagessubredditviewer.R;
@@ -43,7 +41,7 @@ public class RedditAdapter extends RecyclerView.Adapter<RedditAdapter.ViewHolder
     public void onBindViewHolder(@NonNull ViewHolder viewHolder, int i) {
 
         ImageLoader.get(viewHolder.imageView.getContext())
-                .loadUrl(list.get(i).getData().getUrl())
+                .loadUrl(list.get(i).getData().getThumbnail())
                 .target(viewHolder.imageView)
                 .execute();
     }
@@ -59,11 +57,16 @@ public class RedditAdapter extends RecyclerView.Adapter<RedditAdapter.ViewHolder
 
         public ViewHolder(View view) {
             super(view);
+            view.setOnClickListener(this);
             imageView = view.findViewById(R.id.imageView);
         }
 
         @Override
         public void onClick(View v) {
+
+            if (listener != null) {
+                listener.onItemClick(list.get(getAdapterPosition()));
+            }
         }
     }
 

@@ -35,7 +35,6 @@ public class ImageLoader {
     private FileCache fileCache;
     private Map<ImageView, String> imageViewMap = Collections.synchronizedMap(new WeakHashMap<ImageView, String>());
     private ExecutorService executorService;
-    private final int stubId = R.drawable.ic_launcher_background;
     private String targetUrl;
     private ImageView imageView;
 
@@ -63,13 +62,13 @@ public class ImageLoader {
             Log.e(TAG, "execute: NULL");
             return;
         }
-        imageViewMap.put(imageView, targetUrl);
+        imageViewMap.put(imageView, targetUrl); // Map will ignore if already exist
         Bitmap bitmap = memoryCache.get(targetUrl);
-        if (bitmap != null)
+        if (bitmap != null) {
+            Log.i(TAG, "execute: loaded from memory cache");
             imageView.setImageBitmap(bitmap);
-        else {
+        } else {
             queuePhoto(targetUrl, imageView);
-            imageView.setImageResource(stubId);
         }
     }
 
@@ -83,8 +82,10 @@ public class ImageLoader {
 
         //from SD cache
         Bitmap b = decodeFile(f);
-        if (b != null)
+        if (b != null) {
+            Log.i(TAG, "getBitmap: loaded from disc cache");
             return b;
+        }
 
         //from web
         try {
@@ -99,6 +100,9 @@ public class ImageLoader {
             Util.CopyStream(is, os);
             os.close();
             bitmap = decodeFile(f);
+            if (bitmap == null){
+                Log.e(TAG, "getBitmap: wrong URL");
+            }
             return bitmap;
         } catch (Throwable ex) {
             ex.printStackTrace();
@@ -109,38 +113,54 @@ public class ImageLoader {
     }
 
     //decodes image and scales it to reduce memory consumption
+    // Ref: https://android.jlelse.eu/loading-large-bitmaps-efficiently-in-android-66826cd4ad53
+    // Ref: https://developer.android.com/topic/performance/graphics/load-bitmap
+    //region
     private Bitmap decodeFile(File f) {
         try {
             //decode image size
             BitmapFactory.Options o = new BitmapFactory.Options();
             o.inJustDecodeBounds = true;
             BitmapFactory.decodeStream(new FileInputStream(f), null, o);
-
-            //Find the correct scale value. It should be the power of 2.
-            final int REQUIRED_SIZE = 70;
-            int width_tmp = o.outWidth, height_tmp = o.outHeight;
-            int scale = 1;
-            while (true) {
-                if (width_tmp / 2 < REQUIRED_SIZE || height_tmp / 2 < REQUIRED_SIZE)
-                    break;
-                width_tmp /= 2;
-                height_tmp /= 2;
-                scale *= 2;
-            }
-
             //decode with inSampleSize
             BitmapFactory.Options o2 = new BitmapFactory.Options();
-            o2.inSampleSize = scale;
+            o2.inSampleSize = calculateInSampleSize(o2,100,100);
             return BitmapFactory.decodeStream(new FileInputStream(f), null, o2);
         } catch (FileNotFoundException e) {
         }
         return null;
     }
 
+    public static int calculateInSampleSize(
+            BitmapFactory.Options options, int reqWidth, int reqHeight) {
+        // Raw height and width of image
+        final int height = options.outHeight;
+        final int width = options.outWidth;
+        int inSampleSize = 1;
+
+        if (height > reqHeight || width > reqWidth) {
+
+            final int halfHeight = height / 2;
+            final int halfWidth = width / 2;
+
+            // Calculate the largest inSampleSize value that is a power of 2 and keeps both
+            // height and width larger than the requested height and width.
+            while ((halfHeight / inSampleSize) >= reqHeight
+                    && (halfWidth / inSampleSize) >= reqWidth) {
+                inSampleSize *= 2;
+            }
+        }
+
+        return inSampleSize;
+    }
+    //endregion
+
+
     //Task for the queue
     private class PhotoToLoad {
         String url;
         ImageView imageView;
+
         PhotoToLoad(String u, ImageView i) {
             url = u;
             imageView = i;
@@ -190,8 +210,6 @@ public class ImageLoader {
                 return;
             if (bitmap != null)
                 photoToLoad.imageView.setImageBitmap(bitmap);
-            else
-                photoToLoad.imageView.setImageResource(stubId);
         }
     }
 

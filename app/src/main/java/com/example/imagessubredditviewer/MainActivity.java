@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -27,7 +28,11 @@ public class MainActivity extends AppCompatActivity {
     RedditAdapter.ItemClickListener listener = new RedditAdapter.ItemClickListener() {
         @Override
         public void onItemClick(ChildrenItem item) {
-
+            Bundle bundle = new Bundle();
+            bundle.putString("imageUrl", item.getData().getUrl());
+            Intent intent = new Intent(MainActivity.this, DisplayActivity.class);
+            intent.putExtras(bundle);
+            startActivity(intent);
         }
     };
 
