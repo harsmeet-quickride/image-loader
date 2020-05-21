@@ -16,7 +16,7 @@ allprojects {
 }
 
 dependencies {
-	    implementation 'com.github.rajatsangrame:ImagesSubRedditViewer:1.0.0'
+	implementation 'com.github.rajatsangrame:ImagesSubRedditViewer:1.0.0'
 }
 ```
 
@@ -29,7 +29,7 @@ dependencies {
                 .execute();
 ```
 
-You can also add a listner for `ImageLoader` result e.g.
+You can also add a `ImageListener` for the result e.g.
 
 ```java
         ImageLoader.get(this)
