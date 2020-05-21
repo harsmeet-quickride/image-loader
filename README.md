@@ -16,7 +16,7 @@ allprojects {
 }
 
 dependencies {
-	        implementation 'com.github.rajatsangrame:ImagesSubRedditViewer:1.0.0'
+	    implementation 'com.github.rajatsangrame:ImagesSubRedditViewer:1.0.0'
 }
 ```
 
