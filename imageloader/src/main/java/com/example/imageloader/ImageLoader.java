@@ -7,6 +7,8 @@ import android.graphics.BitmapFactory;
 import android.util.Log;
 import android.widget.ImageView;
 
+import androidx.annotation.UiThread;
+
 import com.example.imageloader.cache.FileCache;
 import com.example.imageloader.cache.MemoryCache;
 
@@ -37,18 +39,30 @@ public class ImageLoader {
     private ExecutorService executorService;
     private String targetUrl;
     private ImageView imageView;
+    private ImageListener imageListener;
+    private static ImageLoader INSTANCE;
 
     private ImageLoader(Context context) {
         fileCache = new FileCache(context);
         executorService = Executors.newFixedThreadPool(5);
     }
 
-    static public ImageLoader get(Context context) {
-        return new ImageLoader(context);
+    public static ImageLoader get(Context context) {
+        if (INSTANCE == null) {
+            INSTANCE = new ImageLoader(context);
+        }
+        return INSTANCE;
     }
 
     public ImageLoader loadUrl(String targetUrl) {
         this.targetUrl = targetUrl;
+        return this;
+    }
+
+    public ImageLoader addListener(ImageListener imageListener) {
+        if (imageListener != null) {
+            this.imageListener = imageListener;
+        }
         return this;
     }
 
@@ -58,15 +72,19 @@ public class ImageLoader {
     }
 
     public void execute() {
-        if (imageView == null || targetUrl == null) {
-            Log.e(TAG, "execute: NULL");
+        if (imageView == null) {
+            showResult(false, "View is null");
+            return;
+        } else if (targetUrl == null) {
+            showResult(false, "URL is null");
             return;
         }
+
         imageViewMap.put(imageView, targetUrl); // Map will ignore if already exist
         Bitmap bitmap = memoryCache.get(targetUrl);
         if (bitmap != null) {
-            Log.i(TAG, "execute: loaded from memory cache");
             imageView.setImageBitmap(bitmap);
+            showResult(true, "Loaded from memory cache");
         } else {
             queuePhoto(targetUrl, imageView);
         }
@@ -83,7 +101,7 @@ public class ImageLoader {
         //from SD cache
         Bitmap b = decodeFile(f);
         if (b != null) {
-            Log.i(TAG, "getBitmap: loaded from disc cache");
+            showResult(true, "Loaded from disc cache");
             return b;
         }
 
@@ -100,9 +118,10 @@ public class ImageLoader {
             Util.CopyStream(is, os);
             os.close();
             bitmap = decodeFile(f);
-            if (bitmap == null){
-                Log.e(TAG, "getBitmap: wrong URL");
-            }
+            if (bitmap == null)
+                showResult(false, "Unable to load URL");
+            else
+                showResult(true, "Fetched form URL");
             return bitmap;
         } catch (Throwable ex) {
             ex.printStackTrace();
@@ -124,7 +143,7 @@ public class ImageLoader {
             BitmapFactory.decodeStream(new FileInputStream(f), null, o);
             //decode with inSampleSize
             BitmapFactory.Options o2 = new BitmapFactory.Options();
-            o2.inSampleSize = calculateInSampleSize(o2,100,100);
+            o2.inSampleSize = calculateInSampleSize(o2, 100, 100);
             return BitmapFactory.decodeStream(new FileInputStream(f), null, o2);
         } catch (FileNotFoundException e) {
         }
@@ -155,6 +174,17 @@ public class ImageLoader {
     }
     //endregion
 
+    @UiThread
+    private void showResult(final boolean result, final String message) {
+        if (imageListener != null)
+            imageView.post(new Runnable() {
+                @Override
+                public void run() {
+                    imageListener.result(result, message);
+                }
+            });
+        Log.i(TAG, "showResult: " + message);
+    }
 
     //Task for the queue
     private class PhotoToLoad {
@@ -208,13 +238,18 @@ public class ImageLoader {
         public void run() {
             if (imageViewReused(photoToLoad))
                 return;
-            if (bitmap != null)
+            if (bitmap != null) {
                 photoToLoad.imageView.setImageBitmap(bitmap);
+            }
         }
     }
 
     public void clearCache() {
         memoryCache.clear();
         fileCache.clear();
+    }
+
+    public interface ImageListener {
+        void result(boolean result, String message);
     }
 }

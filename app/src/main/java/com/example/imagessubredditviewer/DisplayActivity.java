@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.example.imageloader.ImageLoader;
 
@@ -19,7 +20,15 @@ public class DisplayActivity extends AppCompatActivity {
 
         if (url != null) {
             ImageView imageView = findViewById(R.id.imageView);
-            ImageLoader.get(this).loadUrl(url).target(imageView).execute();
+            ImageLoader.get(this)
+                    .loadUrl(url)
+                    .target(imageView)
+                    .addListener(new ImageLoader.ImageListener() {
+                        @Override
+                        public void result(boolean result, final String message) {
+                            Toast.makeText(DisplayActivity.this, message, Toast.LENGTH_SHORT).show();
+                        }
+                    }).execute();
         }
     }
 }
