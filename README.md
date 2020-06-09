@@ -1,4 +1,4 @@
-# ImagesSubRedditViewer
+# image-loader
 [![Release](https://jitpack.io/v/rajatsangrame/ImagesSubRedditViewer.svg)](https://jitpack.io/#rajatsangrame/ImagesSubRedditViewer)
 
 ## Features
