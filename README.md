@@ -17,7 +17,7 @@ allprojects {
 }
 
 dependencies {
-    implementation 'com.github.rajatsangrame::1.0.0'
+    implementation 'com.github.rajatsangrame:image-loader:1.0.0'
 }
 ```
 
