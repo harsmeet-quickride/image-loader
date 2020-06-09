@@ -34,7 +34,7 @@ dependencies {
     implementation "androidx.recyclerview:recyclerview:$rootProject.recycler_view_version"
 
     //implementation project(path: ':imageloader')
-    implementation "com.github.rajatsangrame:ImagesSubRedditViewer:$rootProject.imageloader_version"
+    implementation "com.github.rajatsangrame:image-loader:$rootProject.imageloader_version"
 
     //Gson
     implementation "com.google.code.gson:gson:$rootProject.gson_verison"
